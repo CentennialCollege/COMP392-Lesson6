@@ -27,6 +27,8 @@ import Vector3 = THREE.Vector3;
 import Face3 = THREE.Face3;
 import Point = objects.Point;
 import CScreen = config.Screen;
+import Clock = THREE.Clock;
+import FirstPersonControls = THREE.FirstPersonControls;
 
 //Custom Game Objects
 import gameObject = objects.gameObject;
@@ -48,17 +50,20 @@ var game = (() => {
     var gui: GUI;
     var stats: Stats;
     var step: number = 0;
+    var clock: Clock;
+    var firstPersonControls
 
     function init() {
         // Instantiate a new Scene object
         //scene = new Scene();
 
+        // setup a THREE.JS Clock object
+        clock = new Clock();
+
         setupRenderer(); // setup the default renderer
 	
         setupCamera(); // setup the camera
-	
-        
-    
+
         //Add a Plane to the Scene
         plane = new gameObject(
             new PlaneGeometry(20, 20, 1, 1),
@@ -71,11 +76,23 @@ var game = (() => {
     
         // Add a Sphere to the Scene
         sphereGeometry = new SphereGeometry(2.5, 32, 32);
-        sphereMaterial = new LambertMaterial({color:0xff0000});
+        sphereMaterial = new LambertMaterial({ color: 0xff0000 });
         sphere = new gameObject(sphereGeometry, sphereMaterial, 0, 2.5, 0);
         sphere.name = "The Red Planet";
         scene.add(sphere);
         console.log("Added Sphere Primitive to the scene");
+    
+        // setup first person controls
+        firstPersonControls = new FirstPersonControls(sphere);
+        firstPersonControls.lookSpeed = 0.4;
+        firstPersonControls.movementSpeed = 10;
+        firstPersonControls.lookVertical = true;
+        firstPersonControls.constrainVertical = true;
+        firstPersonControls.verticalMin = 0;
+        firstPersonControls.verticalMax = 2.0;
+        firstPersonControls.lon = -150;
+        firstPersonControls.lat = 120;
+    
     
         // add an axis helper to the scene
         axes = new AxisHelper(20);
@@ -84,7 +101,7 @@ var game = (() => {
     
         // Add an AmbientLight to the scene
         //ambientLight = new AmbientLight(0x090909);
-       //scene.add(ambientLight);
+        //scene.add(ambientLight);
         //console.log("Added an Ambient Light to Scene");
 	
         // Add a SpotLight to the scene
@@ -95,6 +112,9 @@ var game = (() => {
         spotLight.angle = 60 * (Math.PI / 180);
         spotLight.distance = 200;
         spotLight.castShadow = true;
+        spotLight.shadowCameraNear = 1;
+        spotLight.shadowMapHeight = 2048;
+        spotLight.shadowMapWidth = 2048;
         scene.add(spotLight);
         console.log("Added a SpotLight Light to Scene");
     
@@ -128,8 +148,11 @@ var game = (() => {
     // Setup main game loop
     function gameLoop(): void {
         stats.update();
+        var delta: number = clock.getDelta();
 
         sphere.rotation.y += control.rotationSpeed;
+
+        firstPersonControls.update(delta);
     
         // render using requestAnimationFrame
         requestAnimationFrame(gameLoop);
